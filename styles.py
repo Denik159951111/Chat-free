@@ -374,5 +374,101 @@ div[data-testid="stChatMessage"] pre {
     max-width: 320px;
     line-height: 1.45;
 }
+
+/* HUB / LAUNCHER STYLES */
+.hub-header {
+    text-align: center;
+    padding: 3rem 0 2rem 0;
+    animation: fadeInDown 0.6s var(--ease-out);
+}
+.hub-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+.hub-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.hub-card {
+    background: #11131b;
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1.1rem;
+    transition: all 0.28s var(--ease-out);
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.hub-card:hover {
+    background: #171b26;
+    border-color: var(--border-mid);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.hub-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+.hub-card-icon-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.hub-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.015em;
+}
+.hub-card-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin-bottom: 1rem;
+}
+
+.hub-status-active {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: #e2e5eb;
+    background: #212533;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    padding: 2px 7px;
+    letter-spacing: 0.04em;
+}
+.hub-status-soon {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: #585d6e;
+    background: #12141c;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 2px 7px;
+    letter-spacing: 0.04em;
+}
+
+/* Return to Hub Button in Chat Top Bar */
+.btn-back-hub button {
+    background: transparent !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-secondary) !important;
+    border-radius: 8px !important;
+    padding: 0.25rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    transition: all 0.2s var(--ease-out) !important;
+}
+.btn-back-hub button:hover {
+    background: #1c202d !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-mid) !important;
+}
 </style>
 """
