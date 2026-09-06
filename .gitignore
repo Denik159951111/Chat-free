@@ -13,6 +13,9 @@ ENV/
 # Streamlit secrets (protect API keys from public leak)
 .streamlit/secrets.toml
 
+# Persistent chat histories
+data_history/
+
 # Operating System Files
 .DS_Store
 Thumbs.db

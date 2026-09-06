@@ -1,11 +1,15 @@
+import os
+import json
 import streamlit as st
+import streamlit.components.v1 as components
+
 from openrouter_client import fetch_free_models, stream_chat_completion
 from styles import TELEGRAM_DARK_MINIMAL_CSS
 
-# Page Configuration (Centered Telegram / Hub layout)
+# Page Configuration
 st.set_page_config(
-    page_title="Workspace Hub // AI Chat",
-    page_icon="⚡",
+    page_title="AI Chat // Workspace",
+    page_icon="💬",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -13,12 +17,77 @@ st.set_page_config(
 # Apply Minimalist Dark CSS
 st.markdown(TELEGRAM_DARK_MINIMAL_CSS, unsafe_allow_html=True)
 
-# State Management
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "hub"  # 'hub' or 'chat'
+# Persistent History Directory
+HISTORY_DIR = os.path.join(os.path.dirname(__file__), "data_history")
+os.makedirs(HISTORY_DIR, exist_ok=True)
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+def load_history(device_id: str) -> list:
+    if not device_id:
+        return []
+    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
+    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def save_history(device_id: str, messages: list):
+    if not device_id:
+        return
+    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
+    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def clear_history(device_id: str):
+    if not device_id:
+        return
+    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
+    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+
+# Browser LocalStorage Synchronization Bridge
+components.html("""
+<script>
+(function() {
+    try {
+        const key = 'chat_free_device_id';
+        let storedId = localStorage.getItem(key);
+        if (!storedId) {
+            storedId = 'user_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            localStorage.setItem(key, storedId);
+        }
+        const parentUrl = new URL(window.parent.location.href);
+        const curParam = parentUrl.searchParams.get('dev_id');
+        if (curParam !== storedId) {
+            parentUrl.searchParams.set('dev_id', storedId);
+            window.parent.location.replace(parentUrl.toString());
+        }
+    } catch (e) {}
+})();
+</script>
+""", height=0, width=0)
+
+# Get current persistent device id
+current_device_id = st.query_params.get("dev_id", "default_browser")
+
+# Initialize session state with persisted history
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "hub"
+
+if "history_loaded" not in st.session_state:
+    st.session_state.messages = load_history(current_device_id)
+    st.session_state.history_loaded = True
 
 # Fetch Free Models (cached)
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -35,7 +104,6 @@ for idx, m in enumerate(free_models):
         default_index = idx
         break
 
-# Format model label for dropdown
 def format_model(m_id):
     m_data = next((item for item in free_models if item["id"] == m_id), None)
     if m_data:
@@ -145,7 +213,7 @@ if st.session_state.current_page == "hub":
 # ==========================================
 elif st.session_state.current_page == "chat":
 
-    # Minimal Top Bar with Return to Hub button
+    # Top Navigation Bar with Return to Hub and Clear buttons
     top_col0, top_col1, top_col2, top_col3 = st.columns([0.8, 1.0, 2.2, 0.4])
 
     with top_col0:
@@ -173,6 +241,7 @@ elif st.session_state.current_page == "chat":
     with top_col3:
         if st.button("🗑️", help="Очистить диалог", use_container_width=True):
             st.session_state.messages = []
+            clear_history(current_device_id)
             st.rerun()
 
     # Empty Chat Placeholder (Minimalist)
@@ -186,7 +255,7 @@ elif st.session_state.current_page == "chat":
                 <div class="placeholder-title">Диалог пуст</div>
                 <div class="placeholder-sub">
                     Подключена модель <b>{model_name}</b>.<br>
-                    Напишите сообщение в поле внизу для начала диалога.
+                    История сохраняется в вашем браузере автоматически.
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -205,6 +274,7 @@ elif st.session_state.current_page == "chat":
     if user_query:
         # 1. User Message (Telegram Right Bubble)
         st.session_state.messages.append({"role": "user", "content": user_query})
+        save_history(current_device_id, st.session_state.messages)
         with st.chat_message("user"):
             st.markdown(user_query)
 
@@ -255,3 +325,4 @@ elif st.session_state.current_page == "chat":
                 if full_reasoning:
                     assistant_msg["reasoning"] = full_reasoning
                 st.session_state.messages.append(assistant_msg)
+                save_history(current_device_id, st.session_state.messages)
