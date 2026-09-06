@@ -114,98 +114,25 @@ def format_model(m_id):
 
 
 # ==========================================
-# 1. SCREEN: HUB / LAUNCHER (Default start)
+# 1. SCREEN: HUB / LAUNCHER (4 Minimal Rectangles)
 # ==========================================
 if st.session_state.current_page == "hub":
-    st.markdown("""
-        <div class="hub-header">
-            <div style="display: inline-flex; align-items: center; gap: 7px; margin-bottom: 0.5rem;">
-                <div class="tg-brand-dot"></div>
-                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: #7a8094; letter-spacing: 0.1em; text-transform: uppercase;">WORKSPACE // PORTAL</span>
-            </div>
-            <div class="hub-title">Выберите сервис для запуска</div>
-            <div class="hub-subtitle">Единая точка доступа к вашим модулям и инструментам</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="hub-container"><div class="hub-grid">', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
 
     with col1:
-        # Card 1: AI Chatbot (Active)
-        st.markdown("""
-            <div class="hub-card">
-                <div class="hub-card-top">
-                    <div class="hub-card-icon-title">
-                        <span style="font-size: 1.2rem;">💬</span>
-                        <span class="hub-card-title">AI Chatbot</span>
-                    </div>
-                    <span class="hub-status-active">АКТИВЕН</span>
-                </div>
-                <div class="hub-card-desc">
-                    Минималистичный чат-бот с бесплатными нейросетями: NVIDIA Nemotron 3 Ultra, Gemma 4, MiniMax.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("Запустить чат →", key="launch_chat", use_container_width=True):
+        if st.button("💬 ChatBot", key="hub_btn_chat", use_container_width=True):
             st.session_state.current_page = "chat"
             st.rerun()
 
-        st.markdown("<div style='margin-bottom: 1.2rem;'></div>", unsafe_allow_html=True)
-
-        # Card 3: Analytics & Data (Coming Soon)
-        st.markdown("""
-            <div class="hub-card">
-                <div class="hub-card-top">
-                    <div class="hub-card-icon-title">
-                        <span style="font-size: 1.2rem;">📊</span>
-                        <span class="hub-card-title">Data & Analytics</span>
-                    </div>
-                    <span class="hub-status-soon">СКОРО</span>
-                </div>
-                <div class="hub-card-desc">
-                    Модуль визуализации метрик, анализа больших данных и RAG-индексации документов.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("В разработке", key="launch_analytics", disabled=True, use_container_width=True)
+        st.button("⚡ Code Studio", key="hub_btn_code", disabled=True, use_container_width=True)
 
     with col2:
-        # Card 2: Code Studio (Coming Soon)
-        st.markdown("""
-            <div class="hub-card">
-                <div class="hub-card-top">
-                    <div class="hub-card-icon-title">
-                        <span style="font-size: 1.2rem;">⚡</span>
-                        <span class="hub-card-title">Code Studio</span>
-                    </div>
-                    <span class="hub-status-soon">СКОРО</span>
-                </div>
-                <div class="hub-card-desc">
-                    Интерактивная среда для генерации, аудита алгоритмов и тестирования скриптов.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("В разработке", key="launch_code", disabled=True, use_container_width=True)
+        st.button("📊 Analytics", key="hub_btn_analytics", disabled=True, use_container_width=True)
+        st.button("🌐 Services", key="hub_btn_services", disabled=True, use_container_width=True)
 
-        st.markdown("<div style='margin-bottom: 1.2rem;'></div>", unsafe_allow_html=True)
-
-        # Card 4: Web Services (Coming Soon)
-        st.markdown("""
-            <div class="hub-card">
-                <div class="hub-card-top">
-                    <div class="hub-card-icon-title">
-                        <span style="font-size: 1.2rem;">🌐</span>
-                        <span class="hub-card-title">Web Services</span>
-                    </div>
-                    <span class="hub-status-soon">СКОРО</span>
-                </div>
-                <div class="hub-card-desc">
-                    Шлюз управления микросервисами, webhook-интеграциями и серверной автоматизацией.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("В разработке", key="launch_web", disabled=True, use_container_width=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 # ==========================================

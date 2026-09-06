@@ -375,84 +375,55 @@ div[data-testid="stChatMessage"] pre {
     line-height: 1.45;
 }
 
-/* HUB / LAUNCHER STYLES */
-.hub-header {
-    text-align: center;
-    padding: 3rem 0 2rem 0;
-    animation: fadeInDown 0.6s var(--ease-out);
-}
-.hub-title {
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text-primary);
-    margin-bottom: 0.4rem;
-}
-.hub-subtitle {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-}
-
-.hub-card {
-    background: #11131b;
-    border: 1px solid var(--border-subtle);
-    border-radius: 14px;
-    padding: 1.4rem 1.5rem;
-    margin-bottom: 1.1rem;
-    transition: all 0.28s var(--ease-out);
-    position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-}
-.hub-card:hover {
-    background: #171b26;
-    border-color: var(--border-mid);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
-
-.hub-card-top {
+/* ULTRA-MINIMAL HUB TILES */
+.hub-container {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 0.6rem;
-}
-.hub-card-icon-title {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-.hub-card-title {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    letter-spacing: -0.015em;
-}
-.hub-card-desc {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-    margin-bottom: 1rem;
+    justify-content: center;
+    min-height: 70vh;
+    animation: fadeInDown 0.45s var(--ease-out);
 }
 
-.hub-status-active {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: #e2e5eb;
-    background: #212533;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 4px;
-    padding: 2px 7px;
-    letter-spacing: 0.04em;
+.hub-grid {
+    width: 100%;
+    max-width: 520px;
 }
-.hub-status-soon {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: #585d6e;
-    background: #12141c;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    padding: 2px 7px;
-    letter-spacing: 0.04em;
+
+/* Style the 4 rectangular clickable cards */
+.hub-grid div[data-testid="stButton"] button {
+    height: 96px !important;
+    background: #11131b !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 14px !important;
+    color: var(--text-primary) !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.015em !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.25s var(--ease-out) !important;
+    margin-bottom: 0.9rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.hub-grid div[data-testid="stButton"] button:hover {
+    background: #181c28 !important;
+    border-color: var(--border-mid) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+}
+
+.hub-grid div[data-testid="stButton"] button:disabled {
+    opacity: 0.35 !important;
+    background: #0d0f15 !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 /* Return to Hub Button in Chat Top Bar */
