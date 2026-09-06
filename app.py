@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -12,7 +13,7 @@ from history_manager import (
     update_active_messages,
 )
 
-# Page Configuration (No emojis in page_title or page_icon)
+# Page Configuration
 st.set_page_config(
     page_title="AI Chat // Workspace",
     layout="wide",
@@ -22,10 +23,14 @@ st.set_page_config(
 # Apply Minimalist Dark CSS
 st.markdown(TELEGRAM_DARK_MINIMAL_CSS, unsafe_allow_html=True)
 
-# Browser LocalStorage Synchronization Bridge
-components.html("""
+# Client Controller: LocalStorage Sync, Auto-Scroll, Smart Header, Code Collapsing & Copy
+CLIENT_CONTROLLER_JS = """
 <script>
 (function() {
+    const parentDoc = window.parent.document;
+    const parentWin = window.parent;
+
+    // 1. Device ID LocalStorage Sync
     try {
         const key = 'chat_free_device_id';
         let storedId = localStorage.getItem(key);
@@ -33,21 +38,125 @@ components.html("""
             storedId = 'user_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
             localStorage.setItem(key, storedId);
         }
-        const parentUrl = new URL(window.parent.location.href);
+        const parentUrl = new URL(parentWin.location.href);
         const curParam = parentUrl.searchParams.get('dev_id');
         if (curParam !== storedId) {
             parentUrl.searchParams.set('dev_id', storedId);
-            window.parent.location.replace(parentUrl.toString());
+            parentWin.location.replace(parentUrl.toString());
+            return;
         }
     } catch (e) {}
+
+    // 2. Floating Scroll-to-Top Button Injection
+    let btnTop = parentDoc.getElementById('btnScrollTop');
+    if (!btnTop) {
+        btnTop = parentDoc.createElement('div');
+        btnTop.id = 'btnScrollTop';
+        btnTop.className = 'scroll-top-btn';
+        btnTop.innerText = 'Вверх';
+        btnTop.onclick = function() {
+            parentWin.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        parentDoc.body.appendChild(btnTop);
+    }
+
+    // 3. Smart Header Reveal on Scroll Up & Scroll-Top Visibility
+    let lastScrollY = parentWin.scrollY || 0;
+    parentWin.onscroll = function() {
+        const curY = parentWin.scrollY || 0;
+        const header = parentDoc.getElementById('customStickyHeader');
+
+        // Scroll to top button visibility
+        if (btnTop) {
+            if (curY > 260) {
+                btnTop.classList.add('visible');
+            } else {
+                btnTop.classList.remove('visible');
+            }
+        }
+
+        // Header slide down when scrolling UP
+        if (header) {
+            if (curY < 40) {
+                header.classList.remove('header-hidden');
+            } else if (curY < lastScrollY - 3) {
+                // Scrolling UP: reveal header smoothly!
+                header.classList.remove('header-hidden');
+            } else if (curY > lastScrollY + 4) {
+                // Scrolling DOWN: hide header smoothly!
+                header.classList.add('header-hidden');
+            }
+        }
+        lastScrollY = curY;
+    };
+
+    // 4. Auto-Scroll to Bottom on Chat Load
+    setTimeout(function() {
+        const chatContainer = parentDoc.querySelector('.stChatMessageContainer');
+        if (chatContainer) {
+            parentWin.scrollTo({ top: parentDoc.body.scrollHeight, behavior: 'smooth' });
+        }
+    }, 200);
+
+    // 5. Enhance Code Blocks: Collapsible Large Snippets & 1-Click Copy
+    function enhanceCodeBlocks() {
+        const preBlocks = parentDoc.querySelectorAll('pre');
+        preBlocks.forEach(function(pre) {
+            if (pre.dataset.enhanced === 'true') return;
+            pre.dataset.enhanced = 'true';
+
+            // Add Copy Button
+            const copyBtn = parentDoc.createElement('div');
+            copyBtn.className = 'code-copy-btn';
+            copyBtn.innerText = 'Копировать';
+            copyBtn.onclick = function(e) {
+                e.stopPropagation();
+                const codeEl = pre.querySelector('code') || pre;
+                const text = codeEl.innerText || codeEl.textContent;
+                navigator.clipboard.writeText(text).then(function() {
+                    copyBtn.innerText = 'Скопировано';
+                    setTimeout(function() { copyBtn.innerText = 'Копировать'; }, 1500);
+                });
+            };
+            pre.appendChild(copyBtn);
+
+            // If large snippet (height > 260px), make it collapsible
+            if (pre.scrollHeight > 260) {
+                pre.classList.add('code-collapsed');
+
+                const toggleBar = parentDoc.createElement('div');
+                toggleBar.className = 'code-toggle-bar';
+                toggleBar.innerText = 'Развернуть код';
+                toggleBar.onclick = function() {
+                    if (pre.classList.contains('code-collapsed')) {
+                        pre.classList.remove('code-collapsed');
+                        toggleBar.innerText = 'Свернуть код';
+                    } else {
+                        pre.classList.add('code-collapsed');
+                        toggleBar.innerText = 'Развернуть код';
+                        pre.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                };
+                pre.appendChild(toggleBar);
+            }
+        });
+    }
+
+    // Run enhancement and observe new messages
+    enhanceCodeBlocks();
+    const observer = new MutationObserver(enhanceCodeBlocks);
+    observer.observe(parentDoc.body, { childList: true, subtree: true });
+
 })();
 </script>
-""", height=0, width=0)
+"""
+
+components.html(CLIENT_CONTROLLER_JS, height=0, width=0)
 
 # Get current persistent device id
 current_device_id = st.query_params.get("dev_id", "default_browser")
 
-# Load full user store from persistent disk storage
+# Load full user store
 user_store = load_user_store(current_device_id)
 
 # Initialize Session State
@@ -62,7 +171,6 @@ def load_models():
 free_models = load_models()
 model_ids = [m["id"] for m in free_models]
 
-# Default to NVIDIA Nemotron 3 Ultra (free)
 default_index = 0
 for idx, m in enumerate(free_models):
     if "nemotron-3-ultra" in m["id"].lower():
@@ -113,7 +221,7 @@ elif st.session_state.current_page == "chat":
     active_chat = user_store["chats"][active_chat_id]
     current_messages = active_chat.get("messages", [])
 
-    # --- SIDEBAR: CHAT HISTORY LIST ---
+    # --- SIDEBAR: CHAT HISTORY DRAWER ---
     with st.sidebar:
         st.markdown('<div class="btn-new-chat">', unsafe_allow_html=True)
         if st.button("+ Новый диалог", key="btn_new_chat", use_container_width=True):
@@ -147,7 +255,8 @@ elif st.session_state.current_page == "chat":
                         delete_chat(current_device_id, user_store, cid)
                         st.rerun()
 
-    # --- TOP NAVIGATION BAR ---
+    # --- SMART STICKY TOP BAR (Slides down when scrolling up) ---
+    st.markdown('<div id="customStickyHeader">', unsafe_allow_html=True)
     top_col0, top_col1, top_col2, top_col3 = st.columns([0.9, 1.1, 2.2, 0.8])
 
     with top_col0:
@@ -177,6 +286,8 @@ elif st.session_state.current_page == "chat":
             update_active_messages(current_device_id, user_store, [])
             st.rerun()
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
     # --- CHAT CONTAINER ---
     st.markdown('<div class="stChatMessageContainer">', unsafe_allow_html=True)
 
@@ -202,6 +313,8 @@ elif st.session_state.current_page == "chat":
                 with st.expander("Рассуждения", expanded=False):
                     st.markdown(f"<div class='reasoning-text-minimal'>{msg['reasoning']}</div>", unsafe_allow_html=True)
             st.markdown(msg["content"])
+            if msg["role"] == "assistant" and msg.get("gen_time"):
+                st.markdown(f"<div class='msg-meta-time'>Время ответа: {msg['gen_time']}с</div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -222,11 +335,19 @@ elif st.session_state.current_page == "chat":
             for m in current_messages
         ]
 
-        # 3. Stream Assistant Response
+        # 3. Stream Assistant Response with Timer
         with st.chat_message("assistant"):
+            status_container = st.empty()
             reasoning_container = st.empty()
             content_container = st.empty()
+            time_container = st.empty()
 
+            status_container.markdown(
+                '<div class="streaming-indicator-active"><span class="pulse-dot-mono"></span>Генерация ответа...</div>',
+                unsafe_allow_html=True
+            )
+
+            start_time = time.time()
             full_content = ""
             full_reasoning = ""
             error_flag = False
@@ -251,6 +372,9 @@ elif st.session_state.current_page == "chat":
                     content_container.error(text)
                     break
 
+            gen_duration = round(time.time() - start_time, 1)
+            status_container.empty()
+
             if not error_flag:
                 if full_reasoning:
                     with reasoning_container.container():
@@ -258,8 +382,13 @@ elif st.session_state.current_page == "chat":
                             st.markdown(f"<div class='reasoning-text-minimal'>{full_reasoning}</div>", unsafe_allow_html=True)
 
                 content_container.markdown(full_content if full_content else "Ответ получен.")
+                time_container.markdown(f"<div class='msg-meta-time'>Время ответа: {gen_duration}с</div>", unsafe_allow_html=True)
 
-                assistant_msg = {"role": "assistant", "content": full_content}
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": full_content,
+                    "gen_time": gen_duration
+                }
                 if full_reasoning:
                     assistant_msg["reasoning"] = full_reasoning
                 current_messages.append(assistant_msg)

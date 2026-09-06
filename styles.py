@@ -2,6 +2,7 @@
 Styles module: Hyper-minimalist Telegram-style dark interface.
 Strictly monochromatic black, charcoal, and dark graphite palette.
 Zero emojis, zero stickers, zero neon.
+Smart scroll-up header, collapsible code blocks, and copy button.
 """
 
 TELEGRAM_DARK_MINIMAL_CSS = """
@@ -10,9 +11,9 @@ TELEGRAM_DARK_MINIMAL_CSS = """
 
 :root {
     --bg-main: #08090c;
-    --bg-header: rgba(8, 9, 12, 0.9);
-    --bg-user-bubble: #252a37;
-    --bg-bot-bubble: #12151e;
+    --bg-header: rgba(8, 9, 12, 0.92);
+    --bg-user-bubble: #232734;
+    --bg-bot-bubble: #12141d;
     --bg-input: #12141c;
     --bg-dropdown: #141721;
     --bg-dropdown-hover: #1c202d;
@@ -41,7 +42,7 @@ html, body, .stApp {
     overflow-x: hidden;
 }
 
-/* Scrollbar */
+/* Clean Scrollbar */
 ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -57,27 +58,56 @@ html, body, .stApp {
     background: rgba(255, 255, 255, 0.25);
 }
 
-/* Hide Default Streamlit Clutter */
+/* Streamlit Native Header & Sidebar Toggle Fix */
 header[data-testid="stHeader"] {
-    display: none !important;
+    background: transparent !important;
+    border: none !important;
+    height: 0px !important;
+    z-index: 99999 !important;
 }
 #MainMenu, footer {
     visibility: hidden;
+}
+
+/* Make sure the sidebar collapse/reopen button is ALWAYS accessible and styled cleanly */
+button[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    background: #141722 !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: 8px !important;
+    color: #f4f5f8 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    transition: all 0.2s var(--ease-out) !important;
+    position: fixed !important;
+    top: 12px !important;
+    left: 12px !important;
+    z-index: 100000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+button[data-testid="stSidebarCollapseButton"]:hover,
+[data-testid="stSidebarCollapsedControl"]:hover,
+[data-testid="collapsedControl"]:hover {
+    background: #1c202d !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: scale(1.04);
 }
 
 /* Sidebar (Chat History Drawer) */
 section[data-testid="stSidebar"] {
     background-color: var(--bg-sidebar) !important;
     border-right: 1px solid var(--border-subtle) !important;
-    min-width: 270px !important;
+    min-width: 280px !important;
 }
 section[data-testid="stSidebar"] .block-container {
     padding: 1.2rem 0.9rem !important;
 }
 
-/* Sidebar History Items */
 .history-title {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -85,14 +115,14 @@ section[data-testid="stSidebar"] .block-container {
     margin: 1.2rem 0 0.5rem 0.2rem;
 }
 
-/* History Chat Button styling in Sidebar */
+/* History Chat Button in Sidebar */
 section[data-testid="stSidebar"] div[data-testid="stButton"] button {
     background: transparent !important;
     border: 1px solid transparent !important;
     color: var(--text-secondary) !important;
     border-radius: 8px !important;
     padding: 0.55rem 0.75rem !important;
-    font-size: 0.84rem !important;
+    font-size: 0.83rem !important;
     font-weight: 500 !important;
     text-align: left !important;
     display: flex !important;
@@ -107,7 +137,6 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
     border-color: var(--border-subtle) !important;
 }
 
-/* New Chat Button */
 .btn-new-chat button {
     background: #161924 !important;
     border: 1px solid var(--border-mid) !important;
@@ -125,7 +154,6 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
     transform: translateY(-1px);
 }
 
-/* Active chat badge */
 .active-chat-item button {
     background: #1c202d !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
@@ -133,20 +161,24 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
     font-weight: 600 !important;
 }
 
-/* Minimalist Top App Bar */
-.tg-top-bar {
+/* SMART STICKY TOP BAR (Reveals smoothly when scrolling up) */
+#customStickyHeader {
     position: sticky;
     top: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.8rem 1.2rem;
+    z-index: 9999;
     background: var(--bg-header);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);
-    margin: -1rem -1rem 1.5rem -1rem;
-    animation: fadeInDown 0.35s var(--ease-out);
+    padding: 0.8rem 1rem;
+    margin: -1rem -1rem 1.4rem -1rem;
+    transition: transform 0.35s var(--ease-out), opacity 0.25s ease;
+    transform: translateY(0);
+    opacity: 1;
+}
+#customStickyHeader.header-hidden {
+    transform: translateY(-115%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .tg-brand-title {
@@ -156,7 +188,7 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
     letter-spacing: -0.015em;
 }
 
-/* Smooth Animated Dropdown for Models */
+/* Dropdown styling */
 div[data-baseweb="select"] {
     background: transparent !important;
 }
@@ -175,14 +207,12 @@ div[data-baseweb="select"] > div {
 div[data-baseweb="select"] > div:hover {
     background: var(--bg-dropdown-hover) !important;
     border-color: var(--border-mid) !important;
-    transform: translateY(-1px);
 }
 div[data-baseweb="select"] > div:focus-within {
     border-color: var(--border-focus) !important;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Dropdown Menu Popover Animation */
 div[data-baseweb="popover"], ul[role="listbox"] {
     background: #141721 !important;
     border: 1px solid var(--border-mid) !important;
@@ -204,7 +234,7 @@ li[role="option"]:hover, li[aria-selected="true"] {
     padding-left: 1.1rem !important;
 }
 
-/* Telegram-Style Message Stream */
+/* Telegram Message Bubbles */
 .stChatMessageContainer {
     max-width: 820px !important;
     margin: 0 auto !important;
@@ -217,14 +247,13 @@ div[data-testid="stChatMessage"] {
     gap: 0.75rem !important;
 }
 
-/* Hide Default Avatars */
 div[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"],
 div[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"],
 div[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] {
     display: none !important;
 }
 
-/* User Message Bubble */
+/* User Message */
 div[data-testid="stChatMessage"]:has([aria-label*="user"]) {
     display: flex !important;
     justify-content: flex-end !important;
@@ -241,7 +270,7 @@ div[data-testid="stChatMessage"]:has([aria-label*="user"]) > div:last-child {
     line-height: 1.5 !important;
 }
 
-/* Assistant Message Bubble */
+/* Assistant Message */
 div[data-testid="stChatMessage"]:has([aria-label*="assistant"]) {
     display: flex !important;
     justify-content: flex-start !important;
@@ -258,7 +287,37 @@ div[data-testid="stChatMessage"]:has([aria-label*="assistant"]) > div:last-child
     line-height: 1.55 !important;
 }
 
-/* Floating Capsule Chat Input Bar */
+/* Message Meta Time Tag */
+.msg-meta-time {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Live Streaming Indicator */
+.streaming-indicator-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #9da3b4;
+    margin-bottom: 0.5rem;
+}
+.pulse-dot-mono {
+    width: 6px;
+    height: 6px;
+    background: #e2e5eb;
+    border-radius: 50%;
+    animation: pulseFade 1.4s infinite ease-in-out;
+}
+
+/* Chat Input Bar */
 div[data-testid="stChatInput"] {
     background: transparent !important;
     padding-bottom: 1.4rem !important;
@@ -302,7 +361,7 @@ div[data-testid="stChatInput"] button:hover {
     transform: scale(1.08) !important;
 }
 
-/* Minimalist Reasoning Accordion */
+/* Reasoning Expander */
 div[data-testid="stExpander"] {
     background: #0c0e14 !important;
     border: 1px solid var(--border-subtle) !important;
@@ -325,66 +384,122 @@ div[data-testid="stExpander"] summary:hover {
     padding: 0.6rem 0.8rem;
 }
 
-/* Code Blocks */
-pre, code {
-    font-family: var(--font-mono) !important;
-}
-div[data-testid="stChatMessage"] pre {
+/* COLLAPSIBLE CODE BLOCKS & QUICK COPY */
+pre {
+    position: relative !important;
     background: #090b0f !important;
     border: 1px solid var(--border-subtle) !important;
-    border-radius: 8px !important;
-    padding: 0.85rem !important;
+    border-radius: 10px !important;
+    padding: 2.2rem 1rem 1rem 1rem !important;
+    font-family: var(--font-mono) !important;
+    transition: max-height 0.35s var(--ease-out) !important;
 }
 
-/* Minimal Buttons */
-.stButton > button {
-    background: #141720 !important;
-    border: 1px solid var(--border-subtle) !important;
-    color: var(--text-secondary) !important;
-    border-radius: 8px !important;
-    padding: 0.45rem 0.9rem !important;
-    font-size: 0.82rem !important;
-    font-weight: 500 !important;
-    transition: all 0.2s var(--ease-out) !important;
+/* Collapsed large code snippet */
+pre.code-collapsed {
+    max-height: 250px !important;
+    overflow: hidden !important;
 }
-.stButton > button:hover {
-    background: #1c202d !important;
-    color: #ffffff !important;
-    border-color: var(--border-mid) !important;
+pre.code-collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 34px;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(to bottom, transparent, #090b0f);
+    pointer-events: none;
 }
 
-/* Streaming Blinking Cursor */
-.streaming-cursor-mono {
-    display: inline-block;
-    width: 6px;
-    height: 15px;
-    background: #8e93a3;
-    margin-left: 3px;
-    vertical-align: middle;
-    animation: cursorFade 0.75s infinite ease-in-out;
+/* Expand / Collapse Button at bottom of code */
+.code-toggle-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 34px;
+    background: #0e1118;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: #8e93a3;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    border-radius: 0 0 10px 10px;
+    user-select: none;
+}
+.code-toggle-bar:hover {
+    background: #151923;
+    color: #ffffff;
+}
+
+/* Quick Copy Button at top-right of code */
+.code-copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: #141722;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #8e93a3;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    user-select: none;
+}
+.code-copy-btn:hover {
+    background: #1e2232;
+    color: #ffffff;
+    border-color: var(--border-mid);
+}
+
+/* Floating Scroll to Top Button */
+.scroll-top-btn {
+    position: fixed;
+    bottom: 85px;
+    right: 25px;
+    background: #141722;
+    border: 1px solid var(--border-mid);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: var(--font-family);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.25s var(--ease-out);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    user-select: none;
+}
+.scroll-top-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.scroll-top-btn:hover {
+    background: #1f2434;
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Animations */
 @keyframes tgMessagePop {
-    0% {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes dropdownPop {
-    0% {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.97);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    0% { opacity: 0; transform: translateY(-8px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes fadeInDown {
@@ -392,12 +507,12 @@ div[data-testid="stChatMessage"] pre {
     100% { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes cursorFade {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.15; }
+@keyframes pulseFade {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
 }
 
-/* Centered Minimal Empty State Placeholder */
+/* Empty State */
 .empty-chat-placeholder {
     display: flex;
     flex-direction: column;
@@ -421,7 +536,7 @@ div[data-testid="stChatMessage"] pre {
     line-height: 1.45;
 }
 
-/* ULTRA-MINIMAL HUB TILES (4 Rectangles, pure text, zero emojis) */
+/* ULTRA-MINIMAL HUB TILES (4 Rectangles) */
 .hub-container {
     display: flex;
     flex-direction: column;
