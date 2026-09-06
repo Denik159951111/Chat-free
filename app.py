@@ -1,60 +1,26 @@
 import os
-import json
 import streamlit as st
 import streamlit.components.v1 as components
 
 from openrouter_client import fetch_free_models, stream_chat_completion
 from styles import TELEGRAM_DARK_MINIMAL_CSS
+from history_manager import (
+    load_user_store,
+    save_user_store,
+    create_new_chat,
+    delete_chat,
+    update_active_messages,
+)
 
-# Page Configuration
+# Page Configuration (No emojis in page_title or page_icon)
 st.set_page_config(
     page_title="AI Chat // Workspace",
-    page_icon="💬",
-    layout="centered",
-    initial_sidebar_state="collapsed"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Apply Minimalist Dark CSS
 st.markdown(TELEGRAM_DARK_MINIMAL_CSS, unsafe_allow_html=True)
-
-# Persistent History Directory
-HISTORY_DIR = os.path.join(os.path.dirname(__file__), "data_history")
-os.makedirs(HISTORY_DIR, exist_ok=True)
-
-def load_history(device_id: str) -> list:
-    if not device_id:
-        return []
-    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
-    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return []
-    return []
-
-def save_history(device_id: str, messages: list):
-    if not device_id:
-        return
-    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
-    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(messages, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def clear_history(device_id: str):
-    if not device_id:
-        return
-    safe_id = "".join(c for c in device_id if c.isalnum() or c in ("-", "_"))
-    path = os.path.join(HISTORY_DIR, f"{safe_id}.json")
-    if os.path.exists(path):
-        try:
-            os.remove(path)
-        except Exception:
-            pass
 
 # Browser LocalStorage Synchronization Bridge
 components.html("""
@@ -81,13 +47,12 @@ components.html("""
 # Get current persistent device id
 current_device_id = st.query_params.get("dev_id", "default_browser")
 
-# Initialize session state with persisted history
+# Load full user store from persistent disk storage
+user_store = load_user_store(current_device_id)
+
+# Initialize Session State
 if "current_page" not in st.session_state:
     st.session_state.current_page = "hub"
-
-if "history_loaded" not in st.session_state:
-    st.session_state.messages = load_history(current_device_id)
-    st.session_state.history_loaded = True
 
 # Fetch Free Models (cached)
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -109,12 +74,12 @@ def format_model(m_id):
     if m_data:
         ctx = m_data.get("context_length", 0)
         ctx_tag = f"{ctx // 1000}k" if ctx >= 1000 else f"{ctx}"
-        return f"{m_data['name']} • {ctx_tag}"
+        return f"{m_data['name']} - {ctx_tag}"
     return m_id
 
 
 # ==========================================
-# 1. SCREEN: HUB / LAUNCHER (4 Minimal Rectangles)
+# 1. SCREEN: HUB / LAUNCHER (4 Rectangles)
 # ==========================================
 if st.session_state.current_page == "hub":
     st.markdown('<div class="hub-container"><div class="hub-grid">', unsafe_allow_html=True)
@@ -122,36 +87,77 @@ if st.session_state.current_page == "hub":
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("💬 ChatBot", key="hub_btn_chat", use_container_width=True):
+        if st.button("ChatBot", key="hub_btn_chat", use_container_width=True):
             st.session_state.current_page = "chat"
             st.rerun()
 
-        st.button("⚡ Code Studio", key="hub_btn_code", disabled=True, use_container_width=True)
+        st.button("Code Studio", key="hub_btn_code", disabled=True, use_container_width=True)
 
     with col2:
-        st.button("📊 Analytics", key="hub_btn_analytics", disabled=True, use_container_width=True)
-        st.button("🌐 Services", key="hub_btn_services", disabled=True, use_container_width=True)
+        st.button("Analytics", key="hub_btn_analytics", disabled=True, use_container_width=True)
+        st.button("Services", key="hub_btn_services", disabled=True, use_container_width=True)
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 # ==========================================
-# 2. SCREEN: AI CHATBOT (Telegram-style)
+# 2. SCREEN: AI CHATBOT WITH HISTORY
 # ==========================================
 elif st.session_state.current_page == "chat":
 
-    # Top Navigation Bar with Return to Hub and Clear buttons
-    top_col0, top_col1, top_col2, top_col3 = st.columns([0.8, 1.0, 2.2, 0.4])
+    active_chat_id = user_store.get("active_chat_id")
+    if not active_chat_id or active_chat_id not in user_store["chats"]:
+        active_chat_id = next(iter(user_store["chats"].keys()))
+        user_store["active_chat_id"] = active_chat_id
+
+    active_chat = user_store["chats"][active_chat_id]
+    current_messages = active_chat.get("messages", [])
+
+    # --- SIDEBAR: CHAT HISTORY LIST ---
+    with st.sidebar:
+        st.markdown('<div class="btn-new-chat">', unsafe_allow_html=True)
+        if st.button("+ Новый диалог", key="btn_new_chat", use_container_width=True):
+            new_id = create_new_chat(current_device_id, user_store)
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="history-title">История диалогов</div>', unsafe_allow_html=True)
+
+        # List all saved chats
+        chat_ids = list(user_store["chats"].keys())
+        for cid in reversed(chat_ids):
+            c_info = user_store["chats"][cid]
+            is_active = (cid == active_chat_id)
+            btn_label = f"{c_info.get('title', 'Диалог')} ({c_info.get('created_at', '')})"
+
+            col_ch1, col_ch2 = st.columns([5, 1])
+            with col_ch1:
+                if is_active:
+                    st.markdown('<div class="active-chat-item">', unsafe_allow_html=True)
+                if st.button(btn_label, key=f"sel_{cid}", use_container_width=True):
+                    user_store["active_chat_id"] = cid
+                    save_user_store(current_device_id, user_store)
+                    st.rerun()
+                if is_active:
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+            with col_ch2:
+                if len(chat_ids) > 1:
+                    if st.button("x", key=f"del_{cid}", help="Удалить диалог"):
+                        delete_chat(current_device_id, user_store, cid)
+                        st.rerun()
+
+    # --- TOP NAVIGATION BAR ---
+    top_col0, top_col1, top_col2, top_col3 = st.columns([0.9, 1.1, 2.2, 0.8])
 
     with top_col0:
-        if st.button("← Хаб", help="Вернуться в Хаб сервисов", use_container_width=True):
+        if st.button("Назад в хаб", help="Вернуться в Хаб сервисов", use_container_width=True):
             st.session_state.current_page = "hub"
             st.rerun()
 
     with top_col1:
         st.markdown("""
-            <div style="display: flex; align-items: center; gap: 7px; height: 38px;">
-                <div class="tg-brand-dot"></div>
+            <div style="display: flex; align-items: center; height: 38px;">
                 <span class="tg-brand-title">AI Chat</span>
             </div>
         """, unsafe_allow_html=True)
@@ -166,52 +172,57 @@ elif st.session_state.current_page == "chat":
         )
 
     with top_col3:
-        if st.button("🗑️", help="Очистить диалог", use_container_width=True):
-            st.session_state.messages = []
-            clear_history(current_device_id)
+        if st.button("Очистить", help="Очистить сообщения в текущем диалоге", use_container_width=True):
+            active_chat["messages"] = []
+            update_active_messages(current_device_id, user_store, [])
             st.rerun()
 
-    # Empty Chat Placeholder (Minimalist)
-    if not st.session_state.messages:
+    # --- CHAT CONTAINER ---
+    st.markdown('<div class="stChatMessageContainer">', unsafe_allow_html=True)
+
+    # Empty Chat Placeholder
+    if not current_messages:
         cur_model_obj = next((m for m in free_models if m["id"] == selected_model_id), None)
         model_name = cur_model_obj["name"] if cur_model_obj else selected_model_id
 
         st.markdown(f"""
             <div class="empty-chat-placeholder">
-                <div class="placeholder-icon">💬</div>
                 <div class="placeholder-title">Диалог пуст</div>
                 <div class="placeholder-sub">
-                    Подключена модель <b>{model_name}</b>.<br>
-                    История сохраняется в вашем браузере автоматически.
+                    Подключена модель: {model_name}.<br>
+                    История сохраняется в вашем браузере.
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # Render Existing Messages (Telegram Bubbles)
-    for msg in st.session_state.messages:
+    # Render Messages
+    for msg in current_messages:
         with st.chat_message(msg["role"]):
             if msg["role"] == "assistant" and msg.get("reasoning"):
-                with st.expander("🧠 Рассуждения", expanded=False):
+                with st.expander("Рассуждения", expanded=False):
                     st.markdown(f"<div class='reasoning-text-minimal'>{msg['reasoning']}</div>", unsafe_allow_html=True)
             st.markdown(msg["content"])
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Chat Input & Streaming
     user_query = st.chat_input("Сообщение...")
 
     if user_query:
-        # 1. User Message (Telegram Right Bubble)
-        st.session_state.messages.append({"role": "user", "content": user_query})
-        save_history(current_device_id, st.session_state.messages)
+        # 1. Append User Message
+        current_messages.append({"role": "user", "content": user_query})
+        update_active_messages(current_device_id, user_store, current_messages)
+
         with st.chat_message("user"):
             st.markdown(user_query)
 
         # 2. Build Payload
         payload_messages = [
             {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages
+            for m in current_messages
         ]
 
-        # 3. Stream Assistant Response (Telegram Left Bubble)
+        # 3. Stream Assistant Response
         with st.chat_message("assistant"):
             reasoning_container = st.empty()
             content_container = st.empty()
@@ -230,7 +241,7 @@ elif st.session_state.current_page == "chat":
                 if chunk_type == "reasoning":
                     full_reasoning += text
                     with reasoning_container.container():
-                        with st.expander("🧠 Рассуждения", expanded=True):
+                        with st.expander("Рассуждения", expanded=True):
                             st.markdown(f"<div class='reasoning-text-minimal'>{full_reasoning}</div>", unsafe_allow_html=True)
                 elif chunk_type == "content":
                     full_content += text
@@ -243,13 +254,13 @@ elif st.session_state.current_page == "chat":
             if not error_flag:
                 if full_reasoning:
                     with reasoning_container.container():
-                        with st.expander("🧠 Рассуждения", expanded=False):
+                        with st.expander("Рассуждения", expanded=False):
                             st.markdown(f"<div class='reasoning-text-minimal'>{full_reasoning}</div>", unsafe_allow_html=True)
 
-                content_container.markdown(full_content if full_content else "_Ответ получен._")
+                content_container.markdown(full_content if full_content else "Ответ получен.")
 
                 assistant_msg = {"role": "assistant", "content": full_content}
                 if full_reasoning:
                     assistant_msg["reasoning"] = full_reasoning
-                st.session_state.messages.append(assistant_msg)
-                save_history(current_device_id, st.session_state.messages)
+                current_messages.append(assistant_msg)
+                update_active_messages(current_device_id, user_store, current_messages)

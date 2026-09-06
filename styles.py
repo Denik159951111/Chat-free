@@ -1,7 +1,7 @@
 """
 Styles module: Hyper-minimalist Telegram-style dark interface.
-Strictly monochromatic black, charcoal, and dark graphite palette (Zero neon).
-Smooth spring-physics animations for messages, dropdown, and inputs.
+Strictly monochromatic black, charcoal, and dark graphite palette.
+Zero emojis, zero stickers, zero neon.
 """
 
 TELEGRAM_DARK_MINIMAL_CSS = """
@@ -9,13 +9,14 @@ TELEGRAM_DARK_MINIMAL_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg-main: #090a0d;
-    --bg-header: rgba(9, 10, 13, 0.85);
+    --bg-main: #08090c;
+    --bg-header: rgba(8, 9, 12, 0.9);
     --bg-user-bubble: #252a37;
-    --bg-bot-bubble: #13161f;
+    --bg-bot-bubble: #12151e;
     --bg-input: #12141c;
-    --bg-dropdown: #151822;
-    --bg-dropdown-hover: #1f2331;
+    --bg-dropdown: #141721;
+    --bg-dropdown-hover: #1c202d;
+    --bg-sidebar: #0b0c10;
     
     --border-subtle: rgba(255, 255, 255, 0.07);
     --border-mid: rgba(255, 255, 255, 0.12);
@@ -31,7 +32,7 @@ TELEGRAM_DARK_MINIMAL_CSS = """
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Global Application Reset */
+/* Global Reset */
 html, body, .stApp {
     background-color: var(--bg-main) !important;
     font-family: var(--font-family) !important;
@@ -40,7 +41,7 @@ html, body, .stApp {
     overflow-x: hidden;
 }
 
-/* Clean Scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -64,6 +65,74 @@ header[data-testid="stHeader"] {
     visibility: hidden;
 }
 
+/* Sidebar (Chat History Drawer) */
+section[data-testid="stSidebar"] {
+    background-color: var(--bg-sidebar) !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    min-width: 270px !important;
+}
+section[data-testid="stSidebar"] .block-container {
+    padding: 1.2rem 0.9rem !important;
+}
+
+/* Sidebar History Items */
+.history-title {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 1.2rem 0 0.5rem 0.2rem;
+}
+
+/* History Chat Button styling in Sidebar */
+section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: var(--text-secondary) !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    transition: all 0.18s var(--ease-out) !important;
+    margin-bottom: 0.25rem !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
+    background: #141722 !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-subtle) !important;
+}
+
+/* New Chat Button */
+.btn-new-chat button {
+    background: #161924 !important;
+    border: 1px solid var(--border-mid) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    padding: 0.6rem 0.9rem !important;
+    font-size: 0.88rem !important;
+    transition: all 0.2s var(--ease-out) !important;
+    margin-bottom: 0.8rem !important;
+}
+.btn-new-chat button:hover {
+    background: #212536 !important;
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    transform: translateY(-1px);
+}
+
+/* Active chat badge */
+.active-chat-item button {
+    background: #1c202d !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
 /* Minimalist Top App Bar */
 .tg-top-bar {
     position: sticky;
@@ -80,24 +149,11 @@ header[data-testid="stHeader"] {
     animation: fadeInDown 0.35s var(--ease-out);
 }
 
-.tg-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-.tg-brand-dot {
-    width: 7px;
-    height: 7px;
-    background: #e2e5eb;
-    border-radius: 50%;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-    animation: gentlePulse 2.5s infinite var(--ease-out);
-}
 .tg-brand-title {
-    font-size: 0.96rem;
-    font-weight: 700;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-primary);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
 }
 
 /* Smooth Animated Dropdown for Models */
@@ -107,13 +163,13 @@ div[data-baseweb="select"] {
 div[data-baseweb="select"] > div {
     background: var(--bg-dropdown) !important;
     border: 1px solid var(--border-subtle) !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     color: var(--text-primary) !important;
-    font-size: 0.86rem !important;
+    font-size: 0.85rem !important;
     font-weight: 500 !important;
     padding: 0.1rem 0.4rem !important;
     min-height: 38px !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
     transition: all 0.25s var(--ease-out) !important;
 }
 div[data-baseweb="select"] > div:hover {
@@ -138,7 +194,7 @@ div[data-baseweb="popover"], ul[role="listbox"] {
 li[role="option"] {
     background: transparent !important;
     color: var(--text-secondary) !important;
-    font-size: 0.86rem !important;
+    font-size: 0.85rem !important;
     padding: 0.6rem 0.9rem !important;
     transition: all 0.18s var(--ease-out) !important;
 }
@@ -161,14 +217,14 @@ div[data-testid="stChatMessage"] {
     gap: 0.75rem !important;
 }
 
-/* Hide Default Streamlit Avatars for pure clean aesthetic */
+/* Hide Default Avatars */
 div[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"],
 div[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"],
 div[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] {
     display: none !important;
 }
 
-/* User Message Bubble (Telegram Right-Oriented Bubble) */
+/* User Message Bubble */
 div[data-testid="stChatMessage"]:has([aria-label*="user"]) {
     display: flex !important;
     justify-content: flex-end !important;
@@ -181,11 +237,11 @@ div[data-testid="stChatMessage"]:has([aria-label*="user"]) > div:last-child {
     max-width: 78% !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28) !important;
     animation: tgMessagePop 0.3s var(--ease-out) forwards !important;
-    font-size: 0.94rem !important;
+    font-size: 0.93rem !important;
     line-height: 1.5 !important;
 }
 
-/* Assistant Message Bubble (Telegram Left-Oriented Bubble) */
+/* Assistant Message Bubble */
 div[data-testid="stChatMessage"]:has([aria-label*="assistant"]) {
     display: flex !important;
     justify-content: flex-start !important;
@@ -198,11 +254,11 @@ div[data-testid="stChatMessage"]:has([aria-label*="assistant"]) > div:last-child
     max-width: 85% !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.32) !important;
     animation: tgMessagePop 0.3s var(--ease-out) forwards !important;
-    font-size: 0.94rem !important;
+    font-size: 0.93rem !important;
     line-height: 1.55 !important;
 }
 
-/* Telegram-Style Floating Capsule Chat Input Bar */
+/* Floating Capsule Chat Input Bar */
 div[data-testid="stChatInput"] {
     background: transparent !important;
     padding-bottom: 1.4rem !important;
@@ -225,7 +281,7 @@ div[data-testid="stChatInput"] > div:focus-within {
 }
 div[data-testid="stChatInput"] textarea {
     color: var(--text-primary) !important;
-    font-size: 0.94rem !important;
+    font-size: 0.93rem !important;
     line-height: 1.4 !important;
     font-family: var(--font-family) !important;
 }
@@ -248,9 +304,9 @@ div[data-testid="stChatInput"] button:hover {
 
 /* Minimalist Reasoning Accordion */
 div[data-testid="stExpander"] {
-    background: #0d0f15 !important;
+    background: #0c0e14 !important;
     border: 1px solid var(--border-subtle) !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     margin-bottom: 0.6rem !important;
 }
 div[data-testid="stExpander"] summary {
@@ -274,7 +330,7 @@ pre, code {
     font-family: var(--font-mono) !important;
 }
 div[data-testid="stChatMessage"] pre {
-    background: #0a0c10 !important;
+    background: #090b0f !important;
     border: 1px solid var(--border-subtle) !important;
     border-radius: 8px !important;
     padding: 0.85rem !important;
@@ -285,7 +341,7 @@ div[data-testid="stChatMessage"] pre {
     background: #141720 !important;
     border: 1px solid var(--border-subtle) !important;
     color: var(--text-secondary) !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     padding: 0.45rem 0.9rem !important;
     font-size: 0.82rem !important;
     font-weight: 500 !important;
@@ -336,11 +392,6 @@ div[data-testid="stChatMessage"] pre {
     100% { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes gentlePulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-}
-
 @keyframes cursorFade {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.15; }
@@ -357,16 +408,11 @@ div[data-testid="stChatMessage"] pre {
     text-align: center;
     animation: fadeInDown 0.5s var(--ease-out);
 }
-.placeholder-icon {
-    font-size: 2.2rem;
-    margin-bottom: 0.6rem;
-    opacity: 0.6;
-}
 .placeholder-title {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: #b0b5c4;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.35rem;
 }
 .placeholder-sub {
     font-size: 0.84rem;
@@ -375,13 +421,13 @@ div[data-testid="stChatMessage"] pre {
     line-height: 1.45;
 }
 
-/* ULTRA-MINIMAL HUB TILES */
+/* ULTRA-MINIMAL HUB TILES (4 Rectangles, pure text, zero emojis) */
 .hub-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 70vh;
+    min-height: 72vh;
     animation: fadeInDown 0.45s var(--ease-out);
 }
 
@@ -390,14 +436,13 @@ div[data-testid="stChatMessage"] pre {
     max-width: 520px;
 }
 
-/* Style the 4 rectangular clickable cards */
 .hub-grid div[data-testid="stButton"] button {
     height: 96px !important;
     background: #11131b !important;
     border: 1px solid var(--border-subtle) !important;
     border-radius: 14px !important;
     color: var(--text-primary) !important;
-    font-size: 1.05rem !important;
+    font-size: 1.1rem !important;
     font-weight: 600 !important;
     letter-spacing: -0.015em !important;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
@@ -424,22 +469,6 @@ div[data-testid="stChatMessage"] pre {
     cursor: not-allowed !important;
     transform: none !important;
     box-shadow: none !important;
-}
-
-/* Return to Hub Button in Chat Top Bar */
-.btn-back-hub button {
-    background: transparent !important;
-    border: 1px solid var(--border-subtle) !important;
-    color: var(--text-secondary) !important;
-    border-radius: 8px !important;
-    padding: 0.25rem 0.6rem !important;
-    font-size: 0.8rem !important;
-    transition: all 0.2s var(--ease-out) !important;
-}
-.btn-back-hub button:hover {
-    background: #1c202d !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-mid) !important;
 }
 </style>
 """
